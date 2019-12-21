@@ -1,0 +1,55 @@
+name:                andos
+version:             0.1.0.0
+
+dependencies:
+- base >= 4.7 && < 5
+
+executables:
+  andos-exe:
+    main:        Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wall
+    - -Wcompat
+    - -Widentities
+    dependencies:
+    - andos
+    - arithmoi
+    - reflection
+
+library:
+  source-dirs: src
+  dependencies:
+  - arithmoi
+  - bytestring
+  - random
+  - reflection
+  - text
+  - vector
+  - yaml
+  ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Widentities
+
+tests:
+  test-all:
+    main:        Spec.hs
+    source-dirs: test/
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wall
+    - -Wcompat
+    - -Widentities
+    dependencies:
+    - andos
+    - arithmoi
+    - QuickCheck
+    - tasty
+    - tasty-quickcheck
+    - random
