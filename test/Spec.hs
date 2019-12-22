@@ -3,17 +3,20 @@
 module Main where
 
 import Debug.Trace           (trace)
-import System.Random         (mkStdGen)
+import System.Random         (mkStdGen, random)
 import Test.Tasty            (defaultMain, testGroup)
 import Test.Tasty.QuickCheck (Property, property, testProperty)
+import Utils.ModHelper       (runMod)
 
+import Protocol.Client (queryBit)
 import Protocol.Server
-    (chooseModulo, choosePseudoResidue, isResidue, obfuscatedBit)
+    (chooseModulo, choosePseudoResidue, isResidue, moduloValue, obfuscatedBit)
 
 main :: IO ()
 main = defaultMain . testGroup "All tests" $
     [ testProperty "Good pseudo residue" $ testSelectsPseudoResidue
     , testProperty "Correct bit-residue" $ testResidue
+    , testProperty "Meaningful query"    $ testQuery
     ]
 
 testSelectsPseudoResidue :: Int -> Property
@@ -22,6 +25,7 @@ testSelectsPseudoResidue seed = property $
         (m, _) = chooseModulo gen
         pse = choosePseudoResidue m
     in not $ isResidue m pse
+
 
 testResidue :: Int -> Bool -> Property
 testResidue seed bit =
@@ -34,3 +38,21 @@ testResidue seed bit =
        else trace ("counter example: m = " ++ show m ++ "; pse = " ++ show pse
                 ++ "; obfus = " ++ show obf ++ "; seed = " ++ show seed)
           $ property False
+
+
+testQuery :: Int -> Bool -> Bool -> Property
+testQuery seed bitServer bitClient =
+    let gen         = mkStdGen seed
+        (m, gen1)   = chooseModulo gen
+        pse         = choosePseudoResidue m
+        (obf, gen2) = obfuscatedBit m pse bitServer gen1
+        --
+        query = runMod (moduloValue m)
+                       ( fst $ queryBit (fromInteger pse)
+                                        bitClient
+                                        (fromInteger obf)
+                                        gen2
+                       )
+        --
+        response = isResidue m query
+    in property $ response == (bitServer == bitClient)

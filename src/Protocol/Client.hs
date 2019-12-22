@@ -22,6 +22,7 @@ genCoprime gen =
        else genCoprime gen'
 
 
+-- | When response is True, bit is correctly guessed
 queryBit :: (RandomGen g, KnownNat m)
          => Mod m -> Bool -> Mod m -> g -> (Mod m, g)
 queryBit pseudoResd bit obfus gen =
