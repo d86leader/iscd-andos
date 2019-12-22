@@ -1,13 +1,14 @@
-{-# LANGUAGE LambdaCase, OverloadedStrings #-}
-{-# LANGUAGE DataKinds, KindSignatures #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE Rank2Types          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE Rank2Types #-}
 module Main where
 
-import Data.Reflection (reifyNat)
-import GHC.TypeNats    (KnownNat)
-import Math.NumberTheory.Moduli.Class (Mod, (^%), getVal)
-import ModHelpers (runMod)
+import GHC.TypeNats                   (KnownNat)
+import Math.NumberTheory.Moduli.Class (Mod)
+import Utils.ModHelper                (runMod)
 
 
 add :: KnownNat m => Mod m -> Mod m -> Mod m

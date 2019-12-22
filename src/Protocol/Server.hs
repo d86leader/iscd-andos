@@ -12,9 +12,10 @@ module Protocol.Server
 import Math.NumberTheory.Euclidean     (coprime)
 import Math.NumberTheory.Moduli.Jacobi (JacobiSymbol (MinusOne, One), jacobi)
 import Math.NumberTheory.Primes        (Prime, isPrime, unPrime)
-import System.Random                   (RandomGen, next, randomR)
+import Utils.Random                    (mapRandom)
+import Secrets                         (SecretStore, bitsOfAll)
+import System.Random                   (RandomGen, randomR)
 
-import Secrets (SecretStore, bitsOfAll)
 
 
 data Modulo = Modulo Integer (Prime Integer) (Prime Integer)
@@ -96,9 +97,3 @@ obfuscatedMessages :: RandomGen g
 obfuscatedMessages store modulo pseudResd gen =
     let bits = bitsOfAll store
     in mapRandom (mapRandom $ obfuscatedBit modulo pseudResd) bits gen
-
-mapRandom :: RandomGen g => (a -> g -> (b, g)) -> [a] -> g -> ([b], g)
-mapRandom fun xs gen =
-    let gens = gen : map (snd . next) gens
-        vals = zipWith fun xs gens
-    in (map fst vals, last gens)

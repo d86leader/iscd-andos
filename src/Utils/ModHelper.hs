@@ -1,5 +1,5 @@
 {-# LANGUAGE Rank2Types #-}
-module ModHelpers
+module Utils.ModHelper
 ( runMod
 ) where
 

@@ -1,14 +1,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Protocol.Client
 ( queryBit
+, queryMessage
 ) where
 
 
 import GHC.TypeNats                   (KnownNat)
 import Math.NumberTheory.Euclidean    (coprime)
 import Math.NumberTheory.Moduli.Class (Mod, getMod)
--- import Secrets                        (StoreIndex)
-import System.Random                  (RandomGen, randomR)
+import Utils.Random                   (mapRandom)
+import System.Random                  (RandomGen, randomR, random)
 
 
 genCoprime :: (RandomGen g, KnownNat m) => g -> (Mod m, g)
@@ -28,3 +29,13 @@ queryBit pseudoResd bit obfus gen =
         z = x * x * obfus * if bit then pseudoResd
                                    else 1
     in (z, gen')
+
+
+queryMessage :: (RandomGen g, KnownNat m)
+             => [Mod m] -> Mod m -> g -> ([Bool], [Mod m], g)
+queryMessage obfs pse gen =
+    let (bits, gen1)    = mapRandom (\_ g -> random g) obfs gen
+        (queries, gen2) = mapRandom (uncurry (queryBit pse))
+                                    (zip bits obfs)
+                                    gen1
+    in (bits, queries, gen2)
