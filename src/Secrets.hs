@@ -2,7 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ViewPatterns               #-}
 module Secrets
-( SecretStore, createStore, createStore', readStore
+( SecretStore, createStore, createStore', readStore, StoreIndex
 , StringIndex (StringIndex), ElemIndex (ElemIndex)
 , getBit, bitsOf, bitsOfAll
 ) where

@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Protocol
+module Protocol.Server
 ( chooseModulo
 , Modulo (..), moduloValue
 , choosePseudoResidue
@@ -9,17 +9,12 @@ module Protocol
 , obfuscatedMessages
 ) where
 
-import Control.Arrow                   (first)
-import GHC.TypeNats                    (KnownNat)
 import Math.NumberTheory.Euclidean     (coprime)
-import Math.NumberTheory.Moduli.Class  (Mod, getMod)
 import Math.NumberTheory.Moduli.Jacobi (JacobiSymbol (MinusOne, One), jacobi)
 import Math.NumberTheory.Primes        (Prime, isPrime, unPrime)
 import System.Random                   (RandomGen, next, randomR)
 
 import Secrets (SecretStore, bitsOfAll)
-
-import Prelude hiding (mod)
 
 
 data Modulo = Modulo Integer (Prime Integer) (Prime Integer)
@@ -33,7 +28,7 @@ choosePrime gen =
     in case isPrime num of
        Just prime -> (prime, gen')
        _          -> choosePrime gen'
-    where high = 2 ^ 8 - 1
+    where high = 2 ^ 16 - 1
 
 chooseModulo :: RandomGen g => g -> (Modulo, g)
 chooseModulo gen =
@@ -63,26 +58,26 @@ isNonResidue (Modulo _ p' q') num =
     in jacobiMinus (jacobi num p) && jacobiMinus (jacobi num q)
 
 isPseudoResidue :: Modulo -> Integer -> Bool
-isPseudoResidue mod@(Modulo m _ _) num =
-    jacobiOne (jacobi num m) && isNonResidue mod num
+isPseudoResidue modulo@(Modulo m _ _) num =
+    jacobiOne (jacobi num m) && isNonResidue modulo num
 
 choosePseudoResidue :: Modulo -> Integer
-choosePseudoResidue mod = choosePseudoResidue' 2 where
+choosePseudoResidue modulo = choosePseudoResidue' 2 where
     choosePseudoResidue' num =
-        if  isPseudoResidue mod num
+        if  isPseudoResidue modulo num
         then num
-        else if num >= moduloValue mod
+        else if num >= moduloValue modulo
         then error "Couldn't find pseudo residue"
         else choosePseudoResidue' (num + 1)
 
 
 -- | Residue when False, not residue when True
-obfuscatedBit :: forall g m. (RandomGen g, KnownNat m)
-              => Integer -> Bool -> g -> (Mod m, g)
-obfuscatedBit pseudResd b gen =
-    let mval = getMod z
-        (x, gen') = first fromInteger . genCoprime mval $ gen
-        z = x * x * if b then fromInteger pseudResd
+obfuscatedBit :: forall g. RandomGen g
+              => Modulo -> Integer -> Bool -> g -> (Integer, g)
+obfuscatedBit modulo pseudResd b gen =
+    let mval = moduloValue modulo
+        (x, gen') = genCoprime mval $ gen
+        z = x * x * if b then pseudResd
                          else 1
     in (z, gen')
     where
@@ -95,11 +90,12 @@ obfuscatedBit pseudResd b gen =
 
 
 -- | Generate a number for each bit that is residue when 0 and not residue when 1
-obfuscatedMessages :: forall g m. (RandomGen g, KnownNat m)
-                   => SecretStore -> Integer -> g -> ([[Mod m]], g)
-obfuscatedMessages store pseudResd gen =
+obfuscatedMessages :: RandomGen g
+                   => SecretStore -> Modulo -> Integer -> g
+                   -> ([[Integer]], g)
+obfuscatedMessages store modulo pseudResd gen =
     let bits = bitsOfAll store
-    in mapRandom (mapRandom $ obfuscatedBit pseudResd) bits gen
+    in mapRandom (mapRandom $ obfuscatedBit modulo pseudResd) bits gen
 
 mapRandom :: RandomGen g => (a -> g -> (b, g)) -> [a] -> g -> ([b], g)
 mapRandom fun xs gen =
