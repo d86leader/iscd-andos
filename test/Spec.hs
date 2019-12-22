@@ -1,15 +1,16 @@
+{-# LANGUAGE Rank2Types          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE Rank2Types #-}
 module Main where
 
-import Test.Tasty (defaultMain, testGroup)
-import Test.Tasty.QuickCheck (testProperty, Property, property)
-import Protocol (chooseModulo, moduloValue, choosePseudoResidue, obfuscatedBit, isResidue)
-import System.Random (mkStdGen)
-import GHC.TypeNats    (KnownNat)
+import Debug.Trace                    (trace)
+import GHC.TypeNats                   (KnownNat)
 import Math.NumberTheory.Moduli.Class (Mod)
-import ModHelpers (runMod)
-import Debug.Trace (trace)
+import ModHelpers                     (runMod)
+import Protocol
+    (chooseModulo, choosePseudoResidue, isResidue, moduloValue, obfuscatedBit)
+import System.Random                  (mkStdGen)
+import Test.Tasty                     (defaultMain, testGroup)
+import Test.Tasty.QuickCheck          (Property, property, testProperty)
 
 main :: IO ()
 main = defaultMain . testGroup "All tests" $
@@ -32,7 +33,9 @@ testResidue seed bit =
         obfus     = runMod (moduloValue m) $ helper pse
     in if (isResidue m obfus) /= bit
        then property True
-       else trace ("counter example: m = " ++ show m ++ "; pse = " ++ show pse ++ "; obfus = " ++ show obfus ++ "; seed = " ++ show seed) $ property False
+       else trace ("counter example: m = " ++ show m ++ "; pse = " ++ show pse
+                ++ "; obfus = " ++ show obfus ++ "; seed = " ++ show seed)
+          $ property False
     where
         helper :: forall m. KnownNat m => Integer -> Mod m
         helper pse =

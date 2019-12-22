@@ -9,13 +9,13 @@ module Protocol
 , obfuscatedMessages
 ) where
 
-import Control.Arrow (first)
+import Control.Arrow                   (first)
 import GHC.TypeNats                    (KnownNat)
 import Math.NumberTheory.Euclidean     (coprime)
 import Math.NumberTheory.Moduli.Class  (Mod, getMod)
-import Math.NumberTheory.Moduli.Jacobi (JacobiSymbol (One, MinusOne), jacobi)
+import Math.NumberTheory.Moduli.Jacobi (JacobiSymbol (MinusOne, One), jacobi)
 import Math.NumberTheory.Primes        (Prime, isPrime, unPrime)
-import System.Random                   (RandomGen, randomR, next)
+import System.Random                   (RandomGen, next, randomR)
 
 import Secrets (SecretStore, bitsOfAll)
 

@@ -8,7 +8,7 @@ module Secrets
 ) where
 
 import Data.Bifunctor     (bimap)
-import Data.Bits          (testBit, finiteBitSize)
+import Data.Bits          (finiteBitSize, testBit)
 import Data.ByteString    (ByteString, index, length, replicate, unpack)
 import Data.Monoid        ((<>))
 import Data.Text          (Text)

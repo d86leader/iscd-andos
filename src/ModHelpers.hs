@@ -3,11 +3,11 @@ module ModHelpers
 ( runMod
 ) where
 
-import Data.Reflection (reifyNat)
-import Data.Proxy (Proxy (Proxy))
-import GHC.TypeNats    (KnownNat)
-import GHC.Natural     (naturalToInteger)
-import Math.NumberTheory.Moduli.Class (Mod, (^%), getVal)
+import Data.Proxy                     (Proxy (Proxy))
+import Data.Reflection                (reifyNat)
+import GHC.Natural                    (naturalToInteger)
+import GHC.TypeNats                   (KnownNat)
+import Math.NumberTheory.Moduli.Class (Mod, getVal, (^%))
 
 
 runMod :: Integer -> (forall m. KnownNat m => Mod m) -> Integer
