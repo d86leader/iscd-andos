@@ -5,9 +5,9 @@ dependencies:
 - base >= 4.7 && < 5
 
 executables:
-  andos-exe:
+  server-exe:
     main:        Main.hs
-    source-dirs: app
+    source-dirs: server
     ghc-options:
     - -threaded
     - -rtsopts
@@ -18,6 +18,13 @@ executables:
     dependencies:
     - andos
     - arithmoi
+    - containers
+    - random
+    - servant
+    - servant-server
+    - text
+    - vector
+    - warp
 
 library:
   source-dirs: src
@@ -26,6 +33,7 @@ library:
   - bytestring
   - mono-traversable
   - random
+  - servant
   - split
   - text
   - vector

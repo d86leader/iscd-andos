@@ -2,7 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ViewPatterns               #-}
 module Secrets
-( SecretStore, storeSecrets, storeDescriptions
+( SecretStore, storeSecrets, storeDescriptions, storeRowBits
 , createStore, createStore', readStore, StoreIndex
 , StringIndex (StringIndex), ElemIndex (ElemIndex)
 , getBit, bitsOf
@@ -28,6 +28,7 @@ import qualified Data.ByteString as BS
 data SecretStore = SecretStore
     { storeSecrets :: Vector ByteString
     , storeDescriptions :: Vector ByteString
+    , storeRowBits :: Int
     }
 
 createStore :: [(ByteString, ByteString)] -> SecretStore
@@ -35,7 +36,7 @@ createStore pairs =
     let padTo  = maximum . map olength . map fst $ pairs
         secrets = fromList . map (padRight 0 padTo) . map fst $ pairs
         descriptions = fromList . map snd $ pairs
-    in SecretStore secrets descriptions
+    in SecretStore secrets descriptions padTo
   where
     padRight :: Word8 -> Int -> ByteString -> ByteString
     padRight c n bs =
