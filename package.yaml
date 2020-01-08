@@ -52,6 +52,7 @@ tests:
     - andos
     - arithmoi
     - bytestring
+    - mono-traversable
     - QuickCheck
     - quickcheck-instances
     - tasty

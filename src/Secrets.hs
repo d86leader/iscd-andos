@@ -4,7 +4,7 @@
 module Secrets
 ( SecretStore, createStore, createStore', readStore, StoreIndex
 , StringIndex (StringIndex), ElemIndex (ElemIndex)
-, getBit, bitsOf, bitsOfAll
+, getBit, bitsOf
 , toBits, assembleBits
 ) where
 
@@ -17,7 +17,7 @@ import Data.MonoTraversable (olength)
 import Data.Text            (Text)
 import Data.Text.Encoding   (encodeUtf8)
 import Data.Tuple           (swap)
-import Data.Vector          (Vector, fromList, toList, (!))
+import Data.Vector          (Vector, fromList, (!))
 import Data.Word            (Word8)
 import Data.Yaml            (FromJSON (parseJSON), decodeFileThrow)
 
@@ -75,10 +75,6 @@ toBits = concat . map toBitsWord . unpack
 bitsOf :: SecretStore -> StringIndex -> [Bool]
 bitsOf (SecretStore store) (StringIndex i) =
     toBits $ store ! i
-
-
-bitsOfAll :: SecretStore -> [[Bool]]
-bitsOfAll = map toBits . toList . unStore
 
 
 assembleBits :: [Bool] -> ByteString

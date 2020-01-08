@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE Rank2Types, ScopedTypeVariables #-}
 module Utils.ModHelper
 ( runMod
 ) where
@@ -12,5 +12,5 @@ import Math.NumberTheory.Moduli.Class (Mod, getVal)
 runMod :: Integer -> (forall m. KnownNat m => Mod m) -> Integer
 runMod m val = reifyNat m $ extractMod val
 
-extractMod :: KnownNat m => Mod m -> Proxy m -> Integer
+extractMod :: forall m. KnownNat m => Mod m -> Proxy m -> Integer
 extractMod val _proxy = getVal val

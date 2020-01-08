@@ -2,18 +2,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
-import Data.ByteString           (ByteString)
+import Data.ByteString           (ByteString, take, empty)
 import Debug.Trace               (trace)
 import System.Random             (mkStdGen, random)
 import Test.QuickCheck.Instances ()
 import Test.Tasty                (defaultMain, testGroup)
 import Test.Tasty.QuickCheck     (Property, property, testProperty)
-import Utils.ModHelper           (runMod)
 
-import Protocol.Client (queryBit)
+import Protocol.Client (queryBit, queryMessage)
 import Protocol.Server
-    (chooseModulo, choosePseudoResidue, isResidue, moduloValue, obfuscatedBit)
-import Secrets         (assembleBits, toBits)
+    ( chooseModulo, choosePseudoResidue, isResidue, moduloValue
+    , obfuscatedBit, obfuscatedMessage
+    )
+import Secrets         (assembleBits, toBits, createStore, StringIndex (..))
+
+import Prelude hiding (take)
 
 main :: IO ()
 main = defaultMain . testGroup "All tests" $
@@ -21,6 +24,7 @@ main = defaultMain . testGroup "All tests" $
     , testProperty "Correct bit-residue"          $ testResidue
     , testProperty "Meaningful query"             $ testQuery
     , testProperty "Disassembling and assembling" $ testAssembling
+    , testProperty "Querying message"             $ testQueryMessage
     ]
 
 testSelectsPseudoResidue :: Int -> Property
@@ -51,15 +55,29 @@ testQuery seed bitServer bitClient =
         pse         = choosePseudoResidue m
         (obf, gen2) = obfuscatedBit m pse bitServer gen1
         --
-        query = runMod (moduloValue m)
-                       ( fst $ queryBit (fromInteger pse)
-                                        bitClient
-                                        (fromInteger obf)
-                                        gen2
-                       )
+        query = fst $ queryBit (moduloValue m)
+                               (fromInteger pse)
+                               bitClient
+                               (fromInteger obf)
+                               gen2
         --
         response = isResidue m query
     in property $ response == (bitServer == bitClient)
+
+testQueryMessage :: Int -> ByteString -> Property
+testQueryMessage seed str =
+    let gen         = mkStdGen seed
+        store       = createStore [str]
+        (m, gen1)   = chooseModulo gen
+        pse         = choosePseudoResidue m
+        (obf, gen2) = obfuscatedMessage store (StringIndex 0) m pse gen1
+        --
+        (guessed, qs, _) = queryMessage (moduloValue m)
+                                        obf pse gen2
+        responses = map (isResidue m) qs
+        bits = zipWith (==) responses guessed
+        result = assembleBits bits
+    in property $ result == str
 
 testAssembling :: ByteString -> Property
 testAssembling str = property $ str == (assembleBits . toBits) str

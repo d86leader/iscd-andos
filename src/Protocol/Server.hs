@@ -6,14 +6,14 @@ module Protocol.Server
 , isResidue
 , isPseudoResidue
 , obfuscatedBit
-, obfuscatedMessages
+, obfuscatedMessage
 ) where
 
 import Math.NumberTheory.Euclidean     (coprime)
 import Math.NumberTheory.Moduli.Jacobi (JacobiSymbol (MinusOne, One), jacobi)
 import Math.NumberTheory.Primes        (Prime, isPrime, unPrime)
 import Utils.Random                    (mapRandom)
-import Secrets                         (SecretStore, bitsOfAll)
+import Secrets                         (SecretStore, StringIndex, bitsOf)
 import System.Random                   (RandomGen, randomR)
 
 
@@ -91,9 +91,9 @@ obfuscatedBit modulo pseudResd b gen =
 
 
 -- | Generate a number for each bit that is residue when 0 and not residue when 1
-obfuscatedMessages :: RandomGen g
-                   => SecretStore -> Modulo -> Integer -> g
-                   -> ([[Integer]], g)
-obfuscatedMessages store modulo pseudResd gen =
-    let bits = bitsOfAll store
-    in mapRandom (mapRandom $ obfuscatedBit modulo pseudResd) bits gen
+obfuscatedMessage :: RandomGen g
+                  => SecretStore -> StringIndex -> Modulo -> Integer -> g
+                  -> ([Integer], g)
+obfuscatedMessage store index modulo pseudResd gen =
+    let bits = bitsOf store index
+    in mapRandom (obfuscatedBit modulo pseudResd) bits gen
