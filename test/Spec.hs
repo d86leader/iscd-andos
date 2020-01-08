@@ -2,9 +2,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
-import Data.ByteString           (ByteString, take, empty)
+import Data.ByteString           (ByteString)
 import Debug.Trace               (trace)
-import System.Random             (mkStdGen, random)
+import System.Random             (mkStdGen)
 import Test.QuickCheck.Instances ()
 import Test.Tasty                (defaultMain, testGroup)
 import Test.Tasty.QuickCheck     (Property, property, testProperty)
@@ -15,8 +15,6 @@ import Protocol.Server
     , obfuscatedBit, obfuscatedMessage
     )
 import Secrets         (assembleBits, toBits, createStore, StringIndex (..))
-
-import Prelude hiding (take)
 
 main :: IO ()
 main = defaultMain . testGroup "All tests" $

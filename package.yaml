@@ -18,7 +18,6 @@ executables:
     dependencies:
     - andos
     - arithmoi
-    - reflection
 
 library:
   source-dirs: src
@@ -27,7 +26,6 @@ library:
   - bytestring
   - mono-traversable
   - random
-  - reflection
   - split
   - text
   - vector
