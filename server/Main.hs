@@ -14,7 +14,9 @@ import Servant.API              ((:<|>) ((:<|>)))
 import Servant.Server           (Server, serve)
 import System.Random            (getStdGen, setStdGen, random)
 import Protocol.Server
-    (Modulo, chooseModulo, choosePseudoResidue, obfuscatedMessage, isResidue)
+    ( Modulo, chooseModulo, choosePseudoResidue, obfuscatedMessage
+    , isResidue, moduloValue
+    )
 import Secrets
     (SecretStore, StringIndex (..), readStore, storeDescriptions, storeRowBits)
 
@@ -40,7 +42,7 @@ andosServer store database verbose =
         let (token, gen1)  = random gen0
         let (modulo, gen2) = chooseModulo gen1
         let pse            = choosePseudoResidue modulo
-        let qsLeft         = storeRowBits store
+        let qsLeft         = 8 * storeRowBits store
         let cookie = Cookie {modulo, pse, qsLeft}
         setStdGen gen2
         --
@@ -50,7 +52,7 @@ andosServer store database verbose =
                     ++ " and pseudo-residue " ++ show pse
         --
         let db' = insert token cookie db
-        return (db', Token token)
+        return (db', (Token token, pse, moduloValue modulo))
     --
     getRow (Token token) index = liftIO $
         lookup token <$> readMVar database >>= \case
