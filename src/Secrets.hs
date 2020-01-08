@@ -5,32 +5,36 @@ module Secrets
 ( SecretStore, createStore, createStore', readStore, StoreIndex
 , StringIndex (StringIndex), ElemIndex (ElemIndex)
 , getBit, bitsOf, bitsOfAll
+, toBits, assembleBits
 ) where
 
-import Data.Bifunctor     (bimap)
-import Data.Bits          (finiteBitSize, testBit)
-import Data.ByteString    (ByteString, index, length, replicate, unpack)
-import Data.Monoid        ((<>))
-import Data.Text          (Text)
-import Data.Text.Encoding (encodeUtf8)
-import Data.Tuple         (swap)
-import Data.Vector        (Vector, fromList, toList, (!))
-import Data.Word          (Word8)
-import Data.Yaml          (FromJSON (parseJSON), decodeFileThrow)
-import Prelude            hiding (length, replicate)
+import Data.Bifunctor       (bimap)
+import Data.Bits            (finiteBitSize, setBit, shiftL, testBit)
+import Data.ByteString      (ByteString, index, pack, unpack)
+import Data.List.Split      (chunksOf)
+import Data.Monoid          ((<>))
+import Data.MonoTraversable (olength)
+import Data.Text            (Text)
+import Data.Text.Encoding   (encodeUtf8)
+import Data.Tuple           (swap)
+import Data.Vector          (Vector, fromList, toList, (!))
+import Data.Word            (Word8)
+import Data.Yaml            (FromJSON (parseJSON), decodeFileThrow)
+
+import qualified Data.ByteString as BS
 
 
 newtype SecretStore = SecretStore {unStore :: Vector ByteString}
 
 createStore :: [ByteString] -> SecretStore
 createStore bss =
-    let padTo  = maximum . map length $ bss
+    let padTo  = maximum . map olength $ bss
     in SecretStore . fromList . map (padRight 0 padTo) $ bss
   where
     padRight :: Word8 -> Int -> ByteString -> ByteString
     padRight c n bs =
-        let amount = length bs - n
-        in bs <> replicate amount c
+        let amount = olength bs - n
+        in bs <> BS.replicate amount c
 
 createStore' :: [Text] -> SecretStore
 createStore' = createStore . map encodeUtf8
@@ -59,16 +63,35 @@ getBit (SecretStore store) (canonical -> (StringIndex si, ElemIndex ej)) =
     let (wordIndex, bitIndex) = ej `divMod` 8
     in flip testBit bitIndex . flip index wordIndex . flip (!) si $ store
 
-toBits :: Word8 -> [Bool]
-toBits word =
+toBitsWord :: Word8 -> [Bool]
+toBitsWord word =
     let size = finiteBitSize word
         inds = [0..size - 1]
-    in map (testBit word) inds
+    in reverse . map (testBit word) $ inds
+
+toBits :: ByteString -> [Bool]
+toBits = concat . map toBitsWord . unpack
 
 bitsOf :: SecretStore -> StringIndex -> [Bool]
 bitsOf (SecretStore store) (StringIndex i) =
-    concat . map toBits . unpack $ store ! i
+    toBits $ store ! i
 
 
 bitsOfAll :: SecretStore -> [[Bool]]
-bitsOfAll = map (concat . map toBits . unpack) . toList . unStore
+bitsOfAll = map toBits . toList . unStore
+
+
+assembleBits :: [Bool] -> ByteString
+assembleBits bits =
+    let prefix = replicate (olength bits `mod` 8) False
+    in pack . map assembleWord . chunksOf 8 $ prefix <> bits
+  where
+    assembleWord :: [Bool] -> Word8
+    assembleWord = assembleOnto 0
+    assembleOnto x [] = x
+    assembleOnto x (True:rest) =
+        let x' = shiftL x 1 `setBit` 0
+        in assembleOnto x' rest
+    assembleOnto x (False:rest) =
+        let x' = shiftL x 1
+        in assembleOnto x' rest

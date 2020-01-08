@@ -2,21 +2,25 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
-import Debug.Trace           (trace)
-import System.Random         (mkStdGen, random)
-import Test.Tasty            (defaultMain, testGroup)
-import Test.Tasty.QuickCheck (Property, property, testProperty)
-import Utils.ModHelper       (runMod)
+import Data.ByteString           (ByteString)
+import Debug.Trace               (trace)
+import System.Random             (mkStdGen, random)
+import Test.QuickCheck.Instances ()
+import Test.Tasty                (defaultMain, testGroup)
+import Test.Tasty.QuickCheck     (Property, property, testProperty)
+import Utils.ModHelper           (runMod)
 
 import Protocol.Client (queryBit)
 import Protocol.Server
     (chooseModulo, choosePseudoResidue, isResidue, moduloValue, obfuscatedBit)
+import Secrets         (assembleBits, toBits)
 
 main :: IO ()
 main = defaultMain . testGroup "All tests" $
-    [ testProperty "Good pseudo residue" $ testSelectsPseudoResidue
-    , testProperty "Correct bit-residue" $ testResidue
-    , testProperty "Meaningful query"    $ testQuery
+    [ testProperty "Good pseudo residue"          $ testSelectsPseudoResidue
+    , testProperty "Correct bit-residue"          $ testResidue
+    , testProperty "Meaningful query"             $ testQuery
+    , testProperty "Disassembling and assembling" $ testAssembling
     ]
 
 testSelectsPseudoResidue :: Int -> Property
@@ -56,3 +60,6 @@ testQuery seed bitServer bitClient =
         --
         response = isResidue m query
     in property $ response == (bitServer == bitClient)
+
+testAssembling :: ByteString -> Property
+testAssembling str = property $ str == (assembleBits . toBits) str
