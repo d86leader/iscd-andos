@@ -2,7 +2,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ViewPatterns               #-}
 module Secrets
-( SecretStore, createStore, createStore', readStore, StoreIndex
+( SecretStore, storeSecrets, storeDescriptions
+, createStore, createStore', readStore, StoreIndex
 , StringIndex (StringIndex), ElemIndex (ElemIndex)
 , getBit, bitsOf
 , toBits, assembleBits
@@ -24,20 +25,25 @@ import Data.Yaml            (FromJSON (parseJSON), decodeFileThrow)
 import qualified Data.ByteString as BS
 
 
-newtype SecretStore = SecretStore {unStore :: Vector ByteString}
+data SecretStore = SecretStore
+    { storeSecrets :: Vector ByteString
+    , storeDescriptions :: Vector ByteString
+    }
 
-createStore :: [ByteString] -> SecretStore
-createStore bss =
-    let padTo  = maximum . map olength $ bss
-    in SecretStore . fromList . map (padRight 0 padTo) $ bss
+createStore :: [(ByteString, ByteString)] -> SecretStore
+createStore pairs =
+    let padTo  = maximum . map olength . map fst $ pairs
+        secrets = fromList . map (padRight 0 padTo) . map fst $ pairs
+        descriptions = fromList . map snd $ pairs
+    in SecretStore secrets descriptions
   where
     padRight :: Word8 -> Int -> ByteString -> ByteString
     padRight c n bs =
         let amount = olength bs - n
         in bs <> BS.replicate amount c
 
-createStore' :: [Text] -> SecretStore
-createStore' = createStore . map encodeUtf8
+createStore' :: [(Text, Text)] -> SecretStore
+createStore' = createStore . map (bimap encodeUtf8 encodeUtf8)
 
 
 instance FromJSON SecretStore where
@@ -59,7 +65,7 @@ instance StoreIndex (Int, Int) where
     canonical = bimap StringIndex ElemIndex
 
 getBit :: StoreIndex a => SecretStore -> a -> Bool
-getBit (SecretStore store) (canonical -> (StringIndex si, ElemIndex ej)) =
+getBit (storeSecrets -> store) (canonical -> (StringIndex si, ElemIndex ej)) =
     let (wordIndex, bitIndex) = ej `divMod` 8
     in flip testBit bitIndex . flip index wordIndex . flip (!) si $ store
 
@@ -73,7 +79,7 @@ toBits :: ByteString -> [Bool]
 toBits = concat . map toBitsWord . unpack
 
 bitsOf :: SecretStore -> StringIndex -> [Bool]
-bitsOf (SecretStore store) (StringIndex i) =
+bitsOf (storeSecrets -> store) (StringIndex i) =
     toBits $ store ! i
 
 
